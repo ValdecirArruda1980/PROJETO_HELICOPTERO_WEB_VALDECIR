@@ -30,18 +30,22 @@ CORES_OPERACAO = {
 
 FROTA_GLOBAL_SIMULADA = []
 
-ROTAS_REAIS_SP = [
+# Redes de Bases e Helipontos no Brasil
+BASES_E_ROTAS = [
     {"origem": {"icao": "SDPW", "nome": "Aeroporto de Piracicaba", "lat": -22.7610, "lng": -47.6530}, "destino": {"icao": "SBKP", "nome": "Intl Viracopos Campinas", "lat": -23.0074, "lng": -47.1345}},
     {"origem": {"icao": "SBSP", "nome": "Congonhas São Paulo", "lat": -23.6261, "lng": -46.6564}, "destino": {"icao": "SDPW", "nome": "Aeroporto de Piracicaba", "lat": -22.7610, "lng": -47.6530}},
     {"origem": {"icao": "SBMT", "nome": "Campo de Marte SP", "lat": -23.5092, "lng": -46.6378}, "destino": {"icao": "SDAM", "nome": "Amarais Campinas", "lat": -22.8592, "lng": -47.0736}},
     {"origem": {"icao": "SDPW", "nome": "Aeroporto de Piracicaba", "lat": -22.7610, "lng": -47.6530}, "destino": {"icao": "SBRJ", "nome": "Santos Dumont RJ", "lat": -22.9101, "lng": -43.1631}},
     {"origem": {"icao": "SBJR", "nome": "Jacarepaguá RJ", "lat": -22.9869, "lng": -43.3703}, "destino": {"icao": "P-58", "nome": "Plataforma Pré-Sal Offshore", "lat": -24.2000, "lng": -41.8000}},
-    {"origem": {"icao": "SBBH", "nome": "Pampulha Belo Horizonte", "lat": -19.8519, "lng": -43.9506}, "destino": {"icao": "SBCF", "nome": "Confins MG", "lat": -19.6244, "lng": -43.9719}}
+    {"origem": {"icao": "SBBH", "nome": "Pampulha Belo Horizonte", "lat": -19.8519, "lng": -43.9506}, "destino": {"icao": "SBCF", "nome": "Confins MG", "lat": -19.6244, "lng": -43.9719}},
+    {"origem": {"icao": "SBBR", "nome": "Brasília DF", "lat": -15.8697, "lng": -47.9208}, "destino": {"icao": "SBGO", "nome": "Goiânia GO", "lat": -16.6322, "lng": -49.2212}},
+    {"origem": {"icao": "SBCT", "nome": "Afonso Pena Curitiba", "lat": -25.5317, "lng": -49.1761}, "destino": {"icao": "SBFL", "nome": "Hercílio Luz Florianópolis", "lat": -27.6703, "lng": -48.5525}},
+    {"origem": {"icao": "SBSV", "nome": "Deputado Luís Eduardo Magalhães Salvador", "lat": -12.9086, "lng": -38.3225}, "destino": {"icao": "SBRF", "nome": "Guararapes Recife", "lat": -8.1268, "lng": -34.9229}}
 ]
 
-def inicializar_frota_simulada():
+def inicializar_frota_simulada_500():
     global FROTA_GLOBAL_SIMULADA
-    if len(FROTA_GLOBAL_SIMULADA) > 0:
+    if len(FROTA_GLOBAL_SIMULADA) >= 500:
         return
 
     modelos = [
@@ -53,62 +57,66 @@ def inicializar_frota_simulada():
     ]
 
     tipos_op = ["Particular", "Executivo", "Policial", "Offshore"]
-    id_count = 1
+    FROTA_GLOBAL_SIMULADA = []
 
-    for rota in ROTAS_REAIS_SP:
-        for _ in range(5):
-            op_chave = random.choice(tipos_op)
-            mod_nome, fab, pax_max, p_max = random.choice(modelos)
-            
-            # Posição atual entre origem e destino
-            t = random.uniform(0.2, 0.7)
-            lat_init = rota["origem"]["lat"] + t * (rota["destino"]["lat"] - rota["origem"]["lat"])
-            lng_init = rota["origem"]["lng"] + t * (rota["destino"]["lng"] - rota["origem"]["lng"])
-            
-            dlat = rota["destino"]["lat"] - lat_init
-            dlng = rota["destino"]["lng"] - lng_init
-            heading = int((math.degrees(math.atan2(dlng, dlat)) + 360) % 360)
-            
-            vel_kts = random.randint(110, 150)
-            prefixo = f"PP-{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{random.randint(10,99)}"
+    for id_count in range(1, 501):
+        rota = random.choice(BASES_E_ROTAS)
+        op_chave = random.choice(tipos_op)
+        mod_nome, fab, pax_max, p_max = random.choice(modelos)
+        
+        # Dispersão geográfica ampla no Brasil para manter alta densidade
+        lat_base = rota["origem"]["lat"] + random.uniform(-1.8, 1.8)
+        lng_base = rota["origem"]["lng"] + random.uniform(-1.8, 1.8)
+        
+        lat_dest = rota["destino"]["lat"] + random.uniform(-1.8, 1.8)
+        lng_dest = rota["destino"]["lng"] + random.uniform(-1.8, 1.8)
 
-            # Cria um histórico inicial conectado desde a origem real
-            ponto_meio_lat = rota["origem"]["lat"] + (lat_init - rota["origem"]["lat"]) * 0.5
-            ponto_meio_lng = rota["origem"]["lng"] + (lng_init - rota["origem"]["lng"]) * 0.5
+        t = random.uniform(0.1, 0.9)
+        lat_init = lat_base + t * (lat_dest - lat_base)
+        lng_init = lng_base + t * (lng_dest - lng_base)
 
-            FROTA_GLOBAL_SIMULADA.append({
-                "id": id_count,
-                "prefixo": prefixo,
-                "modelo": mod_nome,
-                "fabricante": fab,
-                "icao": f"E48{id_count:03d}",
-                "operacao_chave": op_chave,
-                "tipo_operacao": CORES_OPERACAO[op_chave]["nome_curto"],
-                "cor_operacao": CORES_OPERACAO[op_chave]["cor"],
-                "pax_atual": random.randint(1, pax_max),
-                "pax_max": pax_max,
-                "peso_atual": int(p_max * random.uniform(0.75, 0.95)),
-                "peso_max": p_max,
-                "combustivel": random.randint(50, 95),
-                "autonomia": f"0{random.randint(1,3)}h {random.randint(10,50)}m",
-                "latitude": lat_init,
-                "longitude": lng_init,
-                "historico_rota": [
-                    [rota["origem"]["lat"], rota["origem"]["lng"]],
-                    [ponto_meio_lat, ponto_meio_lng],
-                    [lat_init, lng_init]
-                ],
-                "altitude": random.randint(1500, 3800),
-                "velocidade": vel_kts,
-                "heading": heading,
-                "status": f"Em Rota para {rota['destino']['nome']}",
-                "origem": rota["origem"],
-                "destino": rota["destino"]
-            })
-            id_count += 1
+        dlat = lat_dest - lat_init
+        dlng = lng_dest - lng_init
+        heading = int((math.degrees(math.atan2(dlng, dlat)) + 360) % 360)
+
+        vel_kts = random.randint(100, 160)
+        prefixo = f"PP-{chr(65+random.randint(0,25))}{chr(65+random.randint(0,25))}{random.randint(10,99)}"
+
+        ponto_meio_lat = lat_base + (lat_init - lat_base) * 0.5
+        ponto_meio_lng = lng_base + (lng_init - lng_base) * 0.5
+
+        FROTA_GLOBAL_SIMULADA.append({
+            "id": id_count,
+            "prefixo": prefixo,
+            "modelo": mod_nome,
+            "fabricante": fab,
+            "icao": f"E48{id_count:03d}",
+            "operacao_chave": op_chave,
+            "tipo_operacao": CORES_OPERACAO[op_chave]["nome_curto"],
+            "cor_operacao": CORES_OPERACAO[op_chave]["cor"],
+            "pax_atual": random.randint(1, pax_max),
+            "pax_max": pax_max,
+            "peso_atual": int(p_max * random.uniform(0.75, 0.95)),
+            "peso_max": p_max,
+            "combustivel": random.randint(40, 98),
+            "autonomia": f"0{random.randint(1,3)}h {random.randint(10,50)}m",
+            "latitude": lat_init,
+            "longitude": lng_init,
+            "historico_rota": [
+                [lat_base, lng_base],
+                [ponto_meio_lat, ponto_meio_lng],
+                [lat_init, lng_init]
+            ],
+            "altitude": random.randint(1200, 4200),
+            "velocidade": vel_kts,
+            "heading": heading,
+            "status": f"Em Rota Operacional",
+            "origem": {"icao": rota["origem"]["icao"], "nome": rota["origem"]["nome"], "lat": lat_base, "lng": lng_base},
+            "destino": {"icao": rota["destino"]["icao"], "nome": rota["destino"]["nome"], "lat": lat_dest, "lng": lng_dest}
+        })
 
 def atualizar_posicoes_simuladas():
-    inicializar_frota_simulada()
+    inicializar_frota_simulada_500()
     for aero in FROTA_GLOBAL_SIMULADA:
         dist_nm = (aero["velocidade"] / 3600.0) * 5.0
         dist_deg = dist_nm / 60.0
@@ -118,77 +126,18 @@ def atualizar_posicoes_simuladas():
         aero["longitude"] += dist_deg * math.sin(rad)
         aero["altitude"] += random.choice([-10, 0, 10])
         
-        # Mantém a rota conectada
         aero["historico_rota"].append([aero["latitude"], aero["longitude"]])
-
-def buscar_voos_opensky_brasil():
-    url = "https://opensky-network.org/api/states/all?lamin=-33.75&lomin=-73.98&lamax=5.27&lomax=-28.85"
-    try:
-        response = requests.get(url, timeout=3)
-        if response.status_code == 200:
-            dados = response.json()
-            states = dados.get("states", [])
-            lista_real = []
-            if states:
-                for idx, s in enumerate(states):
-                    icao24 = s[0].strip().upper() if s[0] else "UNK"
-                    callsign = s[1].strip() if s[1] else f"PR-AER{idx+1}"
-                    long, lat = s[5], s[6]
-                    alt_m = s[7] or s[13] or 600
-                    vel_ms = s[9] or 50
-                    heading = s[10] or 0
-                    
-                    if lat is not None and long is not None:
-                        alt_ft = int(alt_m * 3.28084)
-                        vel_kts = int(vel_ms * 1.94384)
-                        
-                        op_chave = "Particular"
-                        if "GLO" in callsign or "TAM" in callsign or "AZU" in callsign:
-                            op_chave = "Executivo"
-                        elif "PT-" in callsign:
-                            op_chave = "Particular"
-                        elif "PR-" in callsign:
-                            op_chave = "Offshore" if alt_ft > 2500 else "Policial"
-
-                        rad = math.radians(heading)
-                        lat_origem = lat - 0.4 * math.cos(rad)
-                        lng_origem = long - 0.4 * math.sin(rad)
-                        lat_dest = lat + 0.4 * math.cos(rad)
-                        lng_dest = long + 0.4 * math.sin(rad)
-
-                        lista_real.append({
-                            "id": idx + 1,
-                            "prefixo": callsign if len(callsign) >= 4 else f"PP-{icao24[:3]}",
-                            "modelo": "Aeronave ADS-B Live",
-                            "fabricante": "Transponder OpenSky",
-                            "icao": icao24,
-                            "tipo_operacao": CORES_OPERACAO[op_chave]["nome_curto"],
-                            "cor_operacao": CORES_OPERACAO[op_chave]["cor"],
-                            "pax_atual": 4, "pax_max": 6,
-                            "peso_atual": 2400, "peso_max": 3000,
-                            "combustivel": 80, "autonomia": "02h 00m",
-                            "latitude": float(lat), "longitude": float(long),
-                            "historico_rota": [[float(lat_origem), float(lng_origem)], [float(lat), float(long)]],
-                            "altitude": alt_ft, "velocidade": vel_kts,
-                            "heading": heading,
-                            "status": f"Em Voo (Rumo {int(heading)}°)",
-                            "origem": {"icao": "RADAR", "nome": "Origem do Voo", "lat": float(lat_origem), "lng": float(lng_origem)},
-                            "destino": {"icao": "DEST", "nome": "Destino Estimado", "lat": float(lat_dest), "lng": float(lng_dest)}
-                        })
-            if len(lista_real) >= 15:
-                return lista_real
-    except Exception as e:
-        print(f"-> Conexão OpenSky em standby: {e}")
-    return []
+        if len(aero["historico_rota"]) > 30:
+            aero["historico_rota"].pop(0)
 
 @app.route("/api/telemetria")
 def api_telemetria():
-    dados_reais = buscar_voos_opensky_brasil()
-    if dados_reais and len(dados_reais) > 0:
-        return jsonify({"status": "sucesso", "origem_dados": f"OpenSky Network ({len(dados_reais)} Aeronaves ao Vivo)", "dados": dados_reais})
-    
     atualizar_posicoes_simuladas()
-    return jsonify({"status": "sucesso", "origem_dados": f"Radar ADS-B Tempo Real ({len(FROTA_GLOBAL_SIMULADA)} Helicópteros)", "dados": FROTA_GLOBAL_SIMULADA})
+    return jsonify({
+        "status": "sucesso", 
+        "origem_dados": f"Radar ADS-B Alta Densidade ({len(FROTA_GLOBAL_SIMULADA)} Helicópteros)", 
+        "dados": FROTA_GLOBAL_SIMULADA
+    })
 
 @app.route("/")
 def index():
@@ -198,7 +147,7 @@ def index():
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Helicóptero Web Valdecir - Telemetria & Rota Completa</title>
+            <title>Helicóptero Web Valdecir - Telemetria 500 Aeronaves</title>
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
             <style>
                 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -233,9 +182,9 @@ def index():
                 }
                 .heli-label {
                     background: #0f172a;
-                    font-size: 10px;
+                    font-size: 9px;
                     font-weight: bold;
-                    padding: 1px 4px;
+                    padding: 1px 3px;
                     border-radius: 3px;
                     white-space: nowrap;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.8);
@@ -243,7 +192,7 @@ def index():
                 }
 
                 table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 5px; }
-                th, td { text-align: left; padding: 7px 5px; border-bottom: 1px solid #334155; }
+                th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #334155; }
                 th { color: #94a3b8; background: #1e293b; }
                 .heli-row { cursor: pointer; transition: background 0.2s; }
                 .heli-row:hover { background: #1e293b; }
@@ -251,7 +200,7 @@ def index():
         </head>
         <body>
             <header>
-                <h1>🚁 Helicóptero Web Valdecir - Telemetria & Rota Completa</h1>
+                <h1>🚁 Helicóptero Web Valdecir - Telemetria (500 Helicópteros)</h1>
                 <span class="badge-db" id="fonte-dados">Sincronizando...</span>
             </header>
 
@@ -288,26 +237,28 @@ def index():
 
                     <div class="card">
                         <h3>🚁 Frota Rastreada (Operação Ao Vivo)</h3>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Callsign</th>
-                                    <th>Operação</th>
-                                    <th>PAX</th>
-                                    <th>Alt / Vel</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabela-aeronaves">
-                                <tr><td colspan="4" style="text-align:center; color:#64748b;">Carregando frota nacional...</td></tr>
-                            </tbody>
-                        </table>
+                        <div style="max-height: 380px; overflow-y: auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Callsign</th>
+                                        <th>Operação</th>
+                                        <th>PAX</th>
+                                        <th>Alt / Vel</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabela-aeronaves">
+                                    <tr><td colspan="4" style="text-align:center; color:#64748b;">Carregando frota de 500 helicópteros...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
             <script>
-                const map = L.map('map').setView([-22.8, -47.2], 9);
+                const map = L.map('map').setView([-18.5, -46.5], 5);
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap'
@@ -325,7 +276,7 @@ def index():
                     const htmlContent = `
                         <div class="heli-marker-box">
                             <div style="transform: rotate(${angle}deg); filter: drop-shadow(0px 2px 4px #000);">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="38" height="38">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
                                     <ellipse cx="50" cy="50" rx="46" ry="6" fill="${cor}" stroke="#000000" stroke-width="2" />
                                     <ellipse cx="50" cy="52" rx="18" ry="24" fill="${cor}" stroke="#000000" stroke-width="2.5" />
                                     <path d="M 36 44 C 36 30, 64 30, 64 44 Z" fill="#38bdf8" stroke="#000" stroke-width="1.5" />
@@ -339,8 +290,8 @@ def index():
                     return L.divIcon({
                         html: htmlContent,
                         className: 'custom-heli-colored-icon',
-                        iconSize: [50, 50],
-                        iconAnchor: [25, 25]
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
                     });
                 }
 
@@ -385,23 +336,19 @@ def index():
                     if (marcadorOrigem) map.removeLayer(marcadorOrigem);
                     if (marcadorDestino) map.removeLayer(marcadorDestino);
 
-                    // Garante a linha contínua desde a decolagem até a posição atual
                     let pontosHistorico = aero.historico_rota || [];
                     if (pontosHistorico.length === 0 || (pontosHistorico[0][0] !== aero.origem.lat && pontosHistorico[0][1] !== aero.origem.lng)) {
                         pontosHistorico.unshift([aero.origem.lat, aero.origem.lng]);
                     }
                     pontosHistorico.push([aero.latitude, aero.longitude]);
 
-                    // Linha Verde Verdejante Contínua (Da decolagem até o ponto atual)
                     linhaPercorrida = L.polyline(pontosHistorico, { color: '#16a34a', weight: 5, opacity: 0.95 }).addTo(map);
 
-                    // Linha Laranja Tracejada (Do ponto atual até o aeroporto de destino)
                     linhaRestante = L.polyline([
                         [aero.latitude, aero.longitude],
                         [aero.destino.lat, aero.destino.lng]
                     ], { color: '#d97706', weight: 4, dashArray: '8, 8', opacity: 0.9 }).addTo(map);
 
-                    // Marcadores nos aeródromos/helipontos reais de saída e chegada
                     marcadorOrigem = L.marker([aero.origem.lat, aero.origem.lng])
                         .addTo(map).bindPopup(`🛫 <b>Decolagem:</b> ${aero.origem.nome}`);
                     marcadorDestino = L.marker([aero.destino.lat, aero.destino.lng])
