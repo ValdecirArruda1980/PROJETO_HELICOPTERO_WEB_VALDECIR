@@ -226,7 +226,9 @@ INDEX_HTML = """
 
     <script>
         const map = L.map('map').setView([-23.0000, -46.8000], 8);
-        map.on('click', function() {
+        map.on('click', function(e) {
+            // Evita limpar se o clique for em um elemento interativo
+            if (e.originalEvent && e.originalEvent.defaultPrevented) return;
             limparRota();
             document.getElementById('plano-titulo').innerText = 'Selecione uma aeronave';
             document.getElementById('p-operacao').innerText = '-';
