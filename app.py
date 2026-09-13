@@ -226,6 +226,18 @@ INDEX_HTML = """
 
     <script>
         const map = L.map('map').setView([-23.0000, -46.8000], 8);
+        map.on('click', function() {
+            limparRota();
+            document.getElementById('plano-titulo').innerText = 'Selecione uma aeronave';
+            document.getElementById('p-operacao').innerText = '-';
+            document.getElementById('p-modelo').innerText = '-';
+            document.getElementById('p-origem').innerText = '-';
+            document.getElementById('p-destino').innerText = '-';
+            document.getElementById('p-pax').innerText = '-';
+            document.getElementById('p-peso').innerText = '-';
+            document.getElementById('p-alt-vel').innerText = '-';
+            document.getElementById('p-combustivel').innerText = '-';
+        });
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap'
         }).addTo(map);
@@ -239,7 +251,9 @@ INDEX_HTML = """
         function criarIconeHelicopteroColorido(prefixo, corHex, heading) {
             const svgIcon = `
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" style="transform: rotate(${heading}deg);">
-                    <path fill="${corHex}" stroke="#ffffff" stroke-width="1.5" d="M12,2 L13,5 L20,5 L20,7 L13,7 L14,14 L18,17 L18,19 L13,17.5 L12,22 L11,17.5 L6,19 L6,17 L10,14 L11,7 L4,7 L4,5 L11,5 Z"/>
+                    <line x1="2" y1="12" x2="22" y2="12" stroke="${corHex}" stroke-width="2.5" stroke-linecap="round"/>
+                    <path fill="${corHex}" stroke="#ffffff" stroke-width="1.2" d="M12,4 C10,4 9,6 9,10 L9,14 C9,16 10,17 11,18 L11,21 L13,21 L13,18 C14,17 15,16 15,14 L15,10 C15,6 14,4 12,4 Z"/>
+                    <line x1="10" y1="21" x2="14" y2="21" stroke="${corHex}" stroke-width="2"/>
                 </svg>`;
             return L.divIcon({
                 html: `<div style="text-align:center;">
@@ -271,6 +285,14 @@ INDEX_HTML = """
             document.getElementById('p-combustivel').innerText = `${aero.combustivel}% (${aero.autonomia} de voo)`;
 
             desenharRotaEHistorico(aero);
+        }
+
+        
+        function limparRota() {
+            if (rotaPolyline) { map.removeLayer(rotaPolyline); rotaPolyline = null; }
+            if (marcadorOrigem) { map.removeLayer(marcadorOrigem); marcadorOrigem = null; }
+            if (marcadorDestino) { map.removeLayer(marcadorDestino); marcadorDestino = null; }
+            selecaoAtualId = null;
         }
 
         function desenharRotaEHistorico(aero) {
