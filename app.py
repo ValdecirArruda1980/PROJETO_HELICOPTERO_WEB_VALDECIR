@@ -1,36 +1,43 @@
-import os
-import random
 import math
-import psycopg2
-import requests
+import random
 from flask import Flask, render_template_string, jsonify
 
 app = Flask(__name__)
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-def obter_conexao():
-    if DATABASE_URL:
-        return psycopg2.connect(DATABASE_URL)
-    else:
-        return psycopg2.connect(
-            host="localhost",
-            database="postgres",
-            user="postgres",
-            password="v@ld3c1r",
-            port=5432
-        )
-
 CORES_OPERACAO = {
-    "Particular": {"cor": "#16a34a", "nome_curto": "Particular (TPX)"},
-    "Executivo": {"cor": "#2563eb", "nome_curto": "Executivo (TPV)"},
-    "Policial": {"cor": "#dc2626", "nome_curto": "Policial / Resgate"},
-    "Offshore": {"cor": "#d97706", "nome_curto": "Offshore (SAE)"}
+    "particular": {"nome": "Particular", "nome_curto": "Particular", "cor": "#10b981"},
+    "executivo": {"nome": "Executivo (TPV)", "nome_curto": "Executivo", "cor": "#3b82f6"},
+    "policial": {"nome": "Policial / Resgate (CGPA)", "nome_curto": "Policial", "cor": "#ef4444"},
+    "offshore": {"nome": "Offshore (Plataforma)", "nome_curto": "Offshore", "cor": "#f59e0b"}
+}
+
+HELICOPTEROS_MODELOS = {
+    "particular": [
+        ("Robinson R44 Raven II", "Robinson", 3, 1134),
+        ("Robinson R66 Turbine", "Robinson", 4, 1225),
+        ("Bell 505 Jet Ranger X", "Bell", 4, 1660),
+        ("Airbus H125 Esquilo", "Airbus Helicopters", 5, 2250)
+    ],
+    "executivo": [
+        ("AW109 Grand", "Leonardo", 7, 3175),
+        ("Airbus H145", "Airbus Helicopters", 8, 3800),
+        ("Bell 429 GlobalRanger", "Bell", 7, 3175),
+        ("Sikorsky S-76C++", "Sikorsky", 12, 5306)
+    ],
+    "policial": [
+        ("Airbus H125 Águia/Ás", "Airbus Helicopters", 5, 2250),
+        ("AW119 Koala", "Leonardo", 7, 2850),
+        ("EC135 T3", "Airbus Helicopters", 6, 2980)
+    ],
+    "offshore": [
+        ("Sikorsky S-92A", "Sikorsky", 19, 12020),
+        ("AW139 Offshore", "Leonardo", 15, 6800),
+        ("Airbus H175", "Airbus Helicopters", 16, 7500)
+    ]
 }
 
 FROTA_GLOBAL_SIMULADA = []
 
-# Redes de Bases e Helipontos no Brasil
 BASES_E_ROTAS = [
     {"origem": {"icao": "SDPW", "nome": "Aeroporto de Piracicaba", "lat": -22.7610, "lng": -47.6530}, "destino": {"icao": "SBKP", "nome": "Intl Viracopos Campinas", "lat": -23.0074, "lng": -47.1345}},
     {"origem": {"icao": "SBSP", "nome": "Congonhas São Paulo", "lat": -23.6261, "lng": -46.6564}, "destino": {"icao": "SDPW", "nome": "Aeroporto de Piracicaba", "lat": -22.7610, "lng": -47.6530}},
@@ -47,29 +54,23 @@ def inicializar_frota_simulada_500():
     global FROTA_GLOBAL_SIMULADA
     if len(FROTA_GLOBAL_SIMULADA) >= 500:
         return
-
-    modelos = [
-        ("Airbus H125", "Airbus Helicopters", 5, 2250),
-        ("Bell 407", "Bell Helicopter", 6, 2381),
-        ("AW109 Grand", "Leonardo", 7, 3175),
-        ("Sikorsky S-76", "Sikorsky Aircraft", 12, 5307),
-        ("EC135 Resgate", "Airbus Helicopters", 6, 2980)
-    ]
-
-    tipos_op = ["Particular", "Executivo", "Policial", "Offshore"]
+    
     FROTA_GLOBAL_SIMULADA = []
-
+    chaves_operacao = list(CORES_OPERACAO.keys())
+    
     for id_count in range(1, 501):
+        op_chave = random.choice(chaves_operacao)
+        modelos = HELICOPTEROS_MODELOS[op_chave]
         rota = random.choice(BASES_E_ROTAS)
-        op_chave = random.choice(tipos_op)
+        
         mod_nome, fab, pax_max, p_max = random.choice(modelos)
         
-        # Dispersão geográfica ampla no Brasil para manter alta densidade
-        lat_base = rota["origem"]["lat"] + random.uniform(-1.8, 1.8)
-        lng_base = rota["origem"]["lng"] + random.uniform(-1.8, 1.8)
+        lat_base = rota["origem"]["lat"] + random.uniform(-0.1, 0.1)
+        lng_base = rota["origem"]["lng"] + random.uniform(-0.1, 0.1)
         
-        lat_dest = rota["destino"]["lat"] + random.uniform(-1.8, 1.8)
-        lng_dest = rota["destino"]["lng"] + random.uniform(-1.8, 1.8)
+        # Coordenadas exatas do destino para bater com o nome correto
+        lat_dest = rota["destino"]["lat"]
+        lng_dest = rota["destino"]["lng"]
 
         t = random.uniform(0.1, 0.9)
         lat_init = lat_base + t * (lat_dest - lat_base)
@@ -118,327 +119,250 @@ def inicializar_frota_simulada_500():
 def atualizar_posicoes_simuladas():
     inicializar_frota_simulada_500()
     for aero in FROTA_GLOBAL_SIMULADA:
-        dist_nm = (aero["velocidade"] / 3600.0) * 5.0
-        dist_deg = dist_nm / 60.0
-        
         rad = math.radians(aero["heading"])
-        aero["latitude"] += dist_deg * math.cos(rad)
-        aero["longitude"] += dist_deg * math.sin(rad)
-        aero["altitude"] += random.choice([-10, 0, 10])
+        passo = 0.003
         
-        aero["historico_rota"].append([aero["latitude"], aero["longitude"]])
+        nova_lat = aero["latitude"] + passo * math.cos(rad)
+        nova_lng = aero["longitude"] + passo * math.sin(rad)
+        
+        aero["latitude"] = nova_lat
+        aero["longitude"] = nova_lng
+        
+        aero["historico_rota"].append([nova_lat, nova_lng])
         if len(aero["historico_rota"]) > 30:
             aero["historico_rota"].pop(0)
 
-@app.route("/api/telemetria")
+@app.route('/api/telemetria')
 def api_telemetria():
     atualizar_posicoes_simuladas()
-    return jsonify({
-        "status": "sucesso", 
-        "origem_dados": f"Radar ADS-B Alta Densidade ({len(FROTA_GLOBAL_SIMULADA)} Helicópteros)", 
-        "dados": FROTA_GLOBAL_SIMULADA
-    })
+    return jsonify(FROTA_GLOBAL_SIMULADA)
 
-@app.route("/")
-def index():
-    return render_template_string("""
-        <!DOCTYPE html>
-        <html lang="pt-br">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Helicóptero Web Valdecir - Telemetria 500 Aeronaves</title>
-            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-            <style>
-                * { box-sizing: border-box; margin: 0; padding: 0; }
-                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; }
-                header { background: #1e293b; padding: 12px 25px; border-bottom: 2px solid #3b82f6; display: flex; justify-content: space-between; align-items: center; }
-                h1 { font-size: 1.3rem; color: #60a5fa; display: flex; align-items: center; gap: 10px; }
-                .badge-db { background: #10b981; color: #022c22; font-size: 0.8rem; font-weight: bold; padding: 5px 12px; border-radius: 12px; }
-                
-                .main-container { display: grid; grid-template-columns: 2.2fr 1fr; gap: 12px; padding: 12px; height: calc(100vh - 65px); }
-                #map { width: 100%; height: 100%; border-radius: 8px; border: 1px solid #334155; }
-                
-                .side-panel { background: #1e293b; border-radius: 8px; padding: 12px; border: 1px solid #334155; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-                .card { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; }
-                .card h3 { color: #93c5fd; font-size: 0.95rem; margin-bottom: 8px; border-bottom: 1px solid #1e293b; padding-bottom: 4px; }
-                
-                .plano-voo-box { background: #172554; border: 1px solid #2563eb; padding: 10px; border-radius: 6px; font-size: 0.82rem; }
-                .plano-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
-                .plano-item { background: #0f172a; padding: 6px; border-radius: 4px; border: 1px solid #1e293b; }
-                .plano-item span { color: #94a3b8; font-size: 0.72rem; display: block; }
-                .plano-item strong { color: #38bdf8; font-size: 0.82rem; }
+INDEX_HTML = """
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helicóptero Web Valdecir - Telemetria ADS-B</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { display: flex; flex-direction: column; height: 100vh; background-color: #0f172a; color: #f8fafc; }
+        header { background-color: #1e293b; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; }
+        h1 { font-size: 1.2rem; font-weight: 600; color: #38bdf8; display: flex; align-items: center; gap: 10px; }
+        .badge-live { background-color: #059669; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        #map { flex: 1; height: 100%; background-color: #1e293b; }
+        .sidebar { width: 380px; background-color: #0f172a; border-left: 2px solid #334155; display: flex; flex-direction: column; padding: 15px; gap: 15px; overflow-y: auto; }
+        .panel { background-color: #1e293b; border-radius: 8px; padding: 15px; border: 1px solid #334155; }
+        .panel-title { font-size: 0.95rem; font-weight: bold; color: #94a3b8; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #334155; padding-bottom: 6px; }
+        .legenda-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem; }
+        .legenda-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .plano-voo { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
+        .plano-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #334155; padding-bottom: 4px; }
+        .plano-item span { color: #94a3b8; }
+        .plano-item strong { color: #38bdf8; }
+        .tabela-container { flex: 1; overflow-y: auto; max-height: 400px; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.8rem; text-align: left; }
+        th { background-color: #1e293b; color: #94a3b8; padding: 8px; position: sticky; top: 0; }
+        td { padding: 8px; border-bottom: 1px solid #1e293b; }
+        tr:hover { background-color: #1e293b; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🚁 Helicóptero Web Valdecir - Telemetria (500 Helicópteros)</h1>
+        <span class="badge-live">Radar ADS-B Alta Densidade (500 Helicópteros)</span>
+    </header>
 
-                .legenda-cores { display: flex; justify-content: space-between; font-size: 0.72rem; background: #0f172a; padding: 8px; border-radius: 6px; border: 1px solid #334155; margin-bottom: 8px; }
-                .leg-item { display: flex; align-items: center; gap: 4px; }
-                .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-
-                .heli-marker-box {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                }
-                .heli-label {
-                    background: #0f172a;
-                    font-size: 9px;
-                    font-weight: bold;
-                    padding: 1px 3px;
-                    border-radius: 3px;
-                    white-space: nowrap;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.8);
-                    margin-top: -2px;
-                }
-
-                table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 5px; }
-                th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid #334155; }
-                th { color: #94a3b8; background: #1e293b; }
-                .heli-row { cursor: pointer; transition: background 0.2s; }
-                .heli-row:hover { background: #1e293b; }
-            </style>
-        </head>
-        <body>
-            <header>
-                <h1>🚁 Helicóptero Web Valdecir - Telemetria (500 Helicópteros)</h1>
-                <span class="badge-db" id="fonte-dados">Sincronizando...</span>
-            </header>
-
-            <div class="main-container">
-                <div id="map"></div>
-
-                <div class="side-panel">
-                    <div class="card">
-                        <h3>🎨 Legenda por Tipo de Operação</h3>
-                        <div class="legenda-cores">
-                            <div class="leg-item"><span class="dot" style="background:#16a34a;"></span> Particular</div>
-                            <div class="leg-item"><span class="dot" style="background:#2563eb;"></span> Executivo</div>
-                            <div class="leg-item"><span class="dot" style="background:#dc2626;"></span> Policial</div>
-                            <div class="leg-item"><span class="dot" style="background:#d97706;"></span> Offshore</div>
-                        </div>
-                    </div>
-
-                    <div class="card" id="card-plano">
-                        <h3>📊 Ficha Completa de Voo Selecionado</h3>
-                        <div class="plano-voo-box">
-                            <p style="color: #cbd5e1; font-weight: bold; font-size: 0.9rem;" id="plano-titulo">Clique em um helicóptero para ver os detalhes</p>
-                            <div class="plano-grid" id="plano-detalhes">
-                                <div class="plano-item"><span>Tipo de Operação:</span><strong id="p-operacao">-</strong></div>
-                                <div class="plano-item"><span>Modelo / Fabricante:</span><strong id="p-modelo">-</strong></div>
-                                <div class="plano-item"><span>Origem / Decolagem:</span><strong id="p-origem">-</strong></div>
-                                <div class="plano-item"><span>Destino Estimado:</span><strong id="p-destino">-</strong></div>
-                                <div class="plano-item"><span>Ocupação Cabine:</span><strong id="p-pax">-</strong></div>
-                                <div class="plano-item"><span>Peso Atual / Máximo:</span><strong id="p-peso">-</strong></div>
-                                <div class="plano-item"><span>Altitude / Velocidade:</span><strong id="p-alt-vel">-</strong></div>
-                                <div class="plano-item"><span>Combustível / Autonomia:</span><strong id="p-combustivel">-</strong></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3>🚁 Frota Rastreada (Operação Ao Vivo)</h3>
-                        <div style="max-height: 380px; overflow-y: auto;">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Callsign</th>
-                                        <th>Operação</th>
-                                        <th>PAX</th>
-                                        <th>Alt / Vel</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-aeronaves">
-                                    <tr><td colspan="4" style="text-align:center; color:#64748b;">Carregando frota de 500 helicópteros...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+    <div class="main-container">
+        <div id="map"></div>
+        <aside class="sidebar">
+            <div class="panel">
+                <div class="panel-title">🎨 Legenda por Tipo de Operação</div>
+                <div class="legenda-grid">
+                    <div class="legenda-item"><div class="dot" style="background-color:#10b981;"></div>Particular</div>
+                    <div class="legenda-item"><div class="dot" style="background-color:#3b82f6;"></div>Executivo</div>
+                    <div class="legenda-item"><div class="dot" style="background-color:#ef4444;"></div>Policial</div>
+                    <div class="legenda-item"><div class="dot" style="background-color:#f59e0b;"></div>Offshore</div>
                 </div>
             </div>
 
-            <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-            <script>
-                const map = L.map('map').setView([-18.5, -46.5], 5);
+            <div class="panel">
+                <div class="panel-title">📊 Ficha Completa de Voo Selecionado</div>
+                <div class="plano-voo" id="detalhes-voo">
+                    <h3 id="plano-titulo" style="color:#38bdf8; margin-bottom:5px;">Selecione uma aeronave</h3>
+                    <div class="plano-item"><span>Tipo de Operação:</span><strong id="p-operacao">-</strong></div>
+                    <div class="plano-item"><span>Modelo / Fabricante:</span><strong id="p-modelo">-</strong></div>
+                    <div class="plano-item"><span>Origem / Decolagem:</span><strong id="p-origem">-</strong></div>
+                    <div class="plano-item"><span>Destino Estimado:</span><strong id="p-destino">-</strong></div>
+                    <div class="plano-item"><span>Ocupação Cabine:</span><strong id="p-pax">-</strong></div>
+                    <div class="plano-item"><span>Peso Atual / Máximo:</span><strong id="p-peso">-</strong></div>
+                    <div class="plano-item"><span>Altitude / Velocidade:</span><strong id="p-alt-vel">-</strong></div>
+                    <div class="plano-item"><span>Combustível / Autonomia:</span><strong id="p-combustivel">-</strong></div>
+                </div>
+            </div>
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(map);
+            <div class="panel" style="flex:1; display:flex; flex-direction:column;">
+                <div class="panel-title">🚁 Frota Rastreada (Operação Ao Vivo)</div>
+                <div class="tabela-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>CallSign</th>
+                                <th>Operação</th>
+                                <th>PAX</th>
+                                <th>Alt / Vel</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabela-frota"></tbody>
+                    </table>
+                </div>
+            </div>
+        </aside>
+    </div>
 
-                let marcadores = {};
-                let helicopteSelecionadoId = null;
-                let linhaPercorrida = null;
-                let linhaRestante = null;
-                let marcadorOrigem = null;
-                let marcadorDestino = null;
+    <script>
+        const map = L.map('map').setView([-23.0000, -46.8000], 8);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-                function criarIconeHelicopteroColorido(prefixo, cor, heading) {
-                    const angle = heading || 0;
-                    const htmlContent = `
-                        <div class="heli-marker-box">
-                            <div style="transform: rotate(${angle}deg); filter: drop-shadow(0px 2px 4px #000);">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="32" height="32">
-                                    <ellipse cx="50" cy="50" rx="46" ry="6" fill="${cor}" stroke="#000000" stroke-width="2" />
-                                    <ellipse cx="50" cy="52" rx="18" ry="24" fill="${cor}" stroke="#000000" stroke-width="2.5" />
-                                    <path d="M 36 44 C 36 30, 64 30, 64 44 Z" fill="#38bdf8" stroke="#000" stroke-width="1.5" />
-                                    <rect x="47" y="72" width="6" height="22" fill="${cor}" stroke="#000" stroke-width="1.5" />
-                                    <rect x="38" y="90" width="24" height="4" fill="#ffffff" stroke="#000" stroke-width="1" />
-                                </svg>
-                            </div>
-                            <div class="heli-label" style="color:${cor}; border: 1px solid ${cor};">${prefixo}</div>
+        let marcadores = {};
+        let selecaoAtualId = null;
+        let rotaPolyline = null;
+        let marcadorOrigem = null;
+        let marcadorDestino = null;
+
+        function criarIconeHelicopteroColorido(prefixo, corHex, heading) {
+            const svgIcon = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" style="transform: rotate(${heading}deg);">
+                    <path fill="${corHex}" stroke="#ffffff" stroke-width="1.5" d="M12,2 L13,5 L20,5 L20,7 L13,7 L14,14 L18,17 L18,19 L13,17.5 L12,22 L11,17.5 L6,19 L6,17 L10,14 L11,7 L4,7 L4,5 L11,5 Z"/>
+                </svg>`;
+            return L.divIcon({
+                html: `<div style="text-align:center;">
+                        ${svgIcon}
+                        <div style="background-color:rgba(15,23,42,0.85); color:${corHex}; font-size:9px; font-weight:bold; border-radius:3px; padding:1px 3px; margin-top:-4px; white-space:nowrap; border:1px solid ${corHex};">${prefixo}</div>
+                       </div>`,
+                className: '',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20]
+            });
+        }
+
+        function selecionarAeronave(id, aeronaves) {
+            const aero = aeronaves.find(a => a.id === id);
+            if (!aero) return;
+            selecaoAtualId = id;
+
+            const speedKmh = Math.round(aero.velocidade * 1.852);
+            const velTexto = `${speedKmh} km/h (${aero.velocidade} kts)`;
+
+            document.getElementById('plano-titulo').innerText = `🛸 ${aero.prefixo} [ICAO: ${aero.icao}]`;
+            document.getElementById('p-operacao').innerHTML = `<span style="color:${aero.cor_operacao}; font-weight:bold;">${aero.tipo_operacao}</span>`;
+            document.getElementById('p-modelo').innerText = `${aero.modelo} (${aero.fabricante})`;
+            document.getElementById('p-origem').innerText = `${aero.origem.nome}`;
+            document.getElementById('p-destino').innerText = `${aero.destino.nome}`;
+            document.getElementById('p-pax').innerText = `${aero.pax_atual} A Bordo / ${aero.pax_max} Max`;
+            document.getElementById('p-peso').innerText = `${aero.peso_atual} kg / ${aero.peso_max} kg (MTOW)`;
+            document.getElementById('p-alt-vel').innerText = `${aero.altitude} ft | ${velTexto}`;
+            document.getElementById('p-combustivel').innerText = `${aero.combustivel}% (${aero.autonomia} de voo)`;
+
+            desenharRotaEHistorico(aero);
+        }
+
+        function desenharRotaEHistorico(aero) {
+            if (rotaPolyline) map.removeLayer(rotaPolyline);
+            if (marcadorOrigem) map.removeLayer(marcadorOrigem);
+            if (marcadorDestino) map.removeLayer(marcadorDestino);
+
+            if (aero.origem && aero.destino) {
+                const pontos = [
+                    [aero.origem.lat, aero.origem.lng],
+                    [aero.latitude, aero.longitude],
+                    [aero.destino.lat, aero.destino.lng]
+                ];
+                
+                rotaPolyline = L.polyline(pontos, { color: aero.cor_operacao, weight: 3, dashArray: '6, 6' }).addTo(map);
+                
+                marcadorOrigem = L.circleMarker([aero.origem.lat, aero.origem.lng], { radius: 6, color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.8 }).addTo(map).bindPopup(`🛫 <b>Origem:</b> ${aero.origem.nome}`);
+                marcadorDestino = L.marker([aero.destino.lat, aero.destino.lng]).addTo(map).bindPopup(`🛬 <b>Destino:</b> ${aero.destino.nome}`);
+            }
+        }
+
+        async function carregarTelemetria() {
+            try {
+                const response = await fetch('/api/telemetria');
+                const aeronaves = await response.json();
+
+                const tbody = document.getElementById('tabela-frota');
+                tbody.innerHTML = '';
+
+                aeronaves.forEach(aero => {
+                    const speedKmh = Math.round(aero.velocidade * 1.852);
+                    const velTexto = `${speedKmh}km/h (${aero.velocidade}kt)`;
+
+                    const tr = document.createElement('tr');
+                    tr.onclick = () => {
+                        map.setView([aero.latitude, aero.longitude], 10);
+                        selecionarAeronave(aero.id, aeronaves);
+                    };
+                    tr.innerHTML = `
+                        <td style="font-weight:bold; color:${aero.cor_operacao};">${aero.prefixo}</td>
+                        <td>${aero.tipo_operacao}</td>
+                        <td>${aero.pax_atual}/${aero.pax_max} pax</td>
+                        <td>${aero.altitude}ft / ${speedKmh}km/h</td>
+                    `;
+                    tbody.appendChild(tr);
+
+                    const popupContent = `
+                        <div style="font-size:12px; font-family:sans-serif;">
+                            <h4 style="color:${aero.cor_operacao}; margin-bottom:4px;">🚁 ${aero.prefixo} (${aero.modelo})</h4>
+                            <b>Operação:</b> ${aero.tipo_operacao}<br>
+                            <b>Passageiros:</b> ${aero.pax_atual} de ${aero.pax_max} pax<br>
+                            <b>Massa Atual:</b> ${aero.peso_atual} kg (Max: ${aero.peso_max} kg)<br>
+                            <b>Combustível:</b> ${aero.combustivel}% (${aero.autonomia})<br>
+                            <b>Altitude:</b> ${aero.altitude} ft | <b>Velocidade:</b> ${speedKmh} km/h (${aero.velocidade} kts)
                         </div>
                     `;
-                    return L.divIcon({
-                        html: htmlContent,
-                        className: 'custom-heli-colored-icon',
-                        iconSize: [40, 40],
-                        iconAnchor: [20, 20]
-                    });
-                }
 
-                function limparSelecao() {
-                    helicopteSelecionadoId = null;
-                    if (linhaPercorrida) map.removeLayer(linhaPercorrida);
-                    if (linhaRestante) map.removeLayer(linhaRestante);
-                    if (marcadorOrigem) map.removeLayer(marcadorOrigem);
-                    if (marcadorDestino) map.removeLayer(marcadorDestino);
+                    const iconCustom = criarIconeHelicopteroColorido(aero.prefixo, aero.cor_operacao, aero.heading);
 
-                    document.getElementById('plano-titulo').innerText = "Clique em um helicóptero para ver os detalhes";
-                    document.getElementById('p-operacao').innerText = "-";
-                    document.getElementById('p-modelo').innerText = "-";
-                    document.getElementById('p-origem').innerText = "-";
-                    document.getElementById('p-destino').innerText = "-";
-                    document.getElementById('p-pax').innerText = "-";
-                    document.getElementById('p-peso').innerText = "-";
-                    document.getElementById('p-alt-vel').innerText = "-";
-                    document.getElementById('p-combustivel').innerText = "-";
-                }
-
-                function selecionarHelicoptero(aero) {
-                    helicopteSelecionadoId = aero.id;
-                    if (marcadores[aero.id]) marcadores[aero.id].openPopup();
-
-                    document.getElementById('plano-titulo').innerText = `🛸 ${aero.prefixo} [ICAO: ${aero.icao}]`;
-                    document.getElementById('p-operacao').innerHTML = `<span style="color:${aero.cor_operacao}; font-weight:bold;">${aero.tipo_operacao}</span>`;
-                    document.getElementById('p-modelo').innerText = `${aero.modelo} (${aero.fabricante})`;
-                    document.getElementById('p-origem').innerText = `${aero.origem.nome}`;
-                    document.getElementById('p-destino').innerText = `${aero.destino.nome}`;
-                    document.getElementById('p-pax').innerText = `${aero.pax_atual} A Bordo / ${aero.pax_max} Max`;
-                    document.getElementById('p-peso').innerText = `${aero.peso_atual} kg / ${aero.peso_max} kg (MTOW)`;
-                    document.getElementById('p-alt-vel').innerText = `${aero.altitude} ft | ${aero.velocidade} kts`;
-                    document.getElementById('p-combustivel').innerText = `${aero.combustivel}% (${aero.autonomia} de voo)`;
-
-                    desenharRotaEHistorico(aero);
-                }
-
-                function desenharRotaEHistorico(aero) {
-                    if (linhaPercorrida) map.removeLayer(linhaPercorrida);
-                    if (linhaRestante) map.removeLayer(linhaRestante);
-                    if (marcadorOrigem) map.removeLayer(marcadorOrigem);
-                    if (marcadorDestino) map.removeLayer(marcadorDestino);
-
-                    let pontosHistorico = aero.historico_rota || [];
-                    if (pontosHistorico.length === 0 || (pontosHistorico[0][0] !== aero.origem.lat && pontosHistorico[0][1] !== aero.origem.lng)) {
-                        pontosHistorico.unshift([aero.origem.lat, aero.origem.lng]);
+                    if (marcadores[aero.id]) {
+                        marcadores[aero.id].setLatLng([aero.latitude, aero.longitude]);
+                        marcadores[aero.id].setIcon(iconCustom);
+                        marcadores[aero.id].getPopup().setContent(popupContent);
+                    } else {
+                        const m = L.marker([aero.latitude, aero.longitude], { icon: iconCustom })
+                            .addTo(map)
+                            .bindPopup(popupContent);
+                        
+                        m.on('click', () => selecionarAeronave(aero.id, aeronaves));
+                        marcadores[aero.id] = m;
                     }
-                    pontosHistorico.push([aero.latitude, aero.longitude]);
-
-                    linhaPercorrida = L.polyline(pontosHistorico, { color: '#16a34a', weight: 5, opacity: 0.95 }).addTo(map);
-
-                    linhaRestante = L.polyline([
-                        [aero.latitude, aero.longitude],
-                        [aero.destino.lat, aero.destino.lng]
-                    ], { color: '#d97706', weight: 4, dashArray: '8, 8', opacity: 0.9 }).addTo(map);
-
-                    marcadorOrigem = L.marker([aero.origem.lat, aero.origem.lng])
-                        .addTo(map).bindPopup(`🛫 <b>Decolagem:</b> ${aero.origem.nome}`);
-                    marcadorDestino = L.marker([aero.destino.lat, aero.destino.lng])
-                        .addTo(map).bindPopup(`🛬 <b>Destino:</b> ${aero.destino.nome}`);
-                }
-
-                map.on('click', (e) => {
-                    if (!e.originalEvent._stopped) limparSelecao();
                 });
 
-                async function atualizarMonitoramento() {
-                    try {
-                        const resposta = await fetch('/api/telemetria');
-                        const json = await resposta.json();
-
-                        if (json.status === 'sucesso') {
-                            if (json.origem_dados) document.getElementById('fonte-dados').innerText = json.origem_dados;
-                            
-                            const frotaDados = json.dados;
-                            const tbody = document.getElementById('tabela-aeronaves');
-                            tbody.innerHTML = '';
-
-                            const idsAtuais = frotaDados.map(a => a.id);
-                            Object.keys(marcadores).forEach(id => {
-                                if (!idsAtuais.includes(parseInt(id))) {
-                                    map.removeLayer(marcadores[id]);
-                                    delete marcadores[id];
-                                }
-                            });
-
-                            frotaDados.forEach(aero => {
-                                const tr = document.createElement('tr');
-                                tr.className = 'heli-row';
-                                tr.onclick = (e) => {
-                                    e.stopPropagation();
-                                    selecionarHelicoptero(aero);
-                                };
-
-                                tr.innerHTML = `
-                                    <td><strong>${aero.prefixo}</strong></td>
-                                    <td><small style="color:${aero.cor_operacao}; font-weight:bold;">${aero.tipo_operacao.split(' ')[0]}</small></td>
-                                    <td>${aero.pax_atual}/${aero.pax_max} pax</td>
-                                    <td>${aero.altitude}ft / ${aero.velocidade}kt</td>
-                                `;
-                                tbody.appendChild(tr);
-
-                                const popupContent = `
-                                    <div style="font-family: Arial; font-size: 12px; color: #0f172a; min-width: 200px;">
-                                        <h4 style="color:${aero.cor_operacao}; margin-bottom:4px;">🚁 ${aero.prefixo} (${aero.modelo})</h4>
-                                        <b>Operação:</b> ${aero.tipo_operacao}<br>
-                                        <b>Passageiros:</b> ${aero.pax_atual} de ${aero.pax_max} pax<br>
-                                        <b>Massa Atual:</b> ${aero.peso_atual} kg (Max: ${aero.peso_max} kg)<br>
-                                        <b>Combustível:</b> ${aero.combustivel}% (${aero.autonomia})<br>
-                                        <b>Altitude:</b> ${aero.altitude} ft | <b>Velocidade:</b> ${aero.velocidade} kts
-                                    </div>
-                                `;
-
-                                const iconCustom = criarIconeHelicopteroColorido(aero.prefixo, aero.cor_operacao, aero.heading);
-
-                                if (marcadores[aero.id]) {
-                                    marcadores[aero.id].setLatLng([aero.latitude, aero.longitude]);
-                                    marcadores[aero.id].setIcon(iconCustom);
-                                    marcadores[aero.id].getPopup().setContent(popupContent);
-                                } else {
-                                    marcadores[aero.id] = L.marker([aero.latitude, aero.longitude], { icon: iconCustom })
-                                        .addTo(map)
-                                        .bindPopup(popupContent);
-                                    
-                                    marcadores[aero.id].on('click', (e) => {
-                                        L.DomEvent.stopPropagation(e);
-                                        selecionarHelicoptero(aero);
-                                    });
-                                }
-
-                                if (helicopteSelecionadoId === aero.id) {
-                                    desenharRotaEHistorico(aero);
-                                }
-                            });
-                        }
-                    } catch (err) {
-                        console.error('Erro ao atualizar telemetria:', err);
-                    }
+                if (selecaoAtualId) {
+                    selecionarAeronave(selecaoAtualId, aeronaves);
                 }
 
-                atualizarMonitoramento();
-                setInterval(atualizarMonitoramento, 5000);
-            </script>
-        </body>
-        </html>
-    """)
+            } catch (err) {
+                console.error("Erro ao carregar telemetria ADS-B:", err);
+            }
+        }
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5052)
+        carregarTelemetria();
+        setInterval(carregarTelemetria, 3000);
+    </script>
+</body>
+</html>
+"""
+
+@app.route('/')
+def index():
+    return render_template_string(INDEX_HTML)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=True)
