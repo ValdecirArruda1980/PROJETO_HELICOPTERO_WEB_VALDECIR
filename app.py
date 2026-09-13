@@ -65,8 +65,8 @@ def inicializar_frota_simulada_500():
         
         mod_nome, fab, pax_max, p_max = random.choice(modelos)
         
-        lat_base = rota["origem"]["lat"] + random.uniform(-0.1, 0.1)
-        lng_base = rota["origem"]["lng"] + random.uniform(-0.1, 0.1)
+        lat_base = rota["origem"]["lat"]
+        lng_base = rota["origem"]["lng"]
         
         # Coordenadas exatas do destino para bater com o nome correto
         lat_dest = rota["destino"]["lat"]
