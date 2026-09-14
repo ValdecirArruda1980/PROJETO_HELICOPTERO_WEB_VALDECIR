@@ -1,30 +1,25 @@
 import math
 import random
-import time
 from flask import Flask, render_template_string, jsonify
 
 app = Flask(__name__)
 
+SDPW_LAT = -22.710556
+SDPW_LNG = -47.619444
+
 BASES_E_ROTAS = [
-    {"origem": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": -22.7115, "lng": -47.6182}, "destino": {"nome": "Intl Viracopos Campinas (SBKP)", "lat": -23.0074, "lng": -47.6182}},
-    {"origem": {"nome": "Heliponto Faria Lima SP", "lat": -23.5780, "lng": -46.6900}, "destino": {"nome": "Aeroporto de Jundiaí (SDJD)", "lat": -23.1817, "lng": -46.9422}},
-    {"origem": {"nome": "Campo de Marte SP (SBMT)", "lat": -23.5069, "lng": -46.6340}, "destino": {"nome": "Aeroporto de Amarais Campinas (SDAM)", "lat": -22.7115, "lng": -47.6182}},
-    {"origem": {"nome": "Heliponto Alphaville Barueri", "lat": -23.4980, "lng": -46.8500}, "destino": {"nome": "Aeroporto de Sorocaba (SDCO)", "lat": -23.4797, "lng": -47.6182}},
-    {"origem": {"nome": "Aeroporto de Bauru (SBBX)", "lat": -22.7115, "lng": -49.0538}, "destino": {"nome": "Aeroporto de Ribeirão Preto (SBRP)", "lat": -21.1364, "lng": -47.6182}},
-    {"origem": {"nome": "Heliponto Rebouças SP", "lat": -23.5650, "lng": -46.6750}, "destino": {"nome": "Aeroporto de Santos (SBST)", "lat": -23.9275, "lng": -46.2842}},
-    {"origem": {"nome": "Plataforma Offshore Bacia de Santos", "lat": -25.2000, "lng": -45.1000}, "destino": {"nome": "Aerop. Jacarepaguá RJ (SBJR)", "lat": -22.7115, "lng": -43.3703}},
-    {"origem": {"nome": "Aerop. Bacacheri Curitiba (SBBI)", "lat": -25.4050, "lng": -49.2320}, "destino": {"nome": "Aerop. Hercílio Luz FNC (SBFL)", "lat": -27.6703, "lng": -48.5525}},
-    {"origem": {"nome": "Aeroporto de Brasília (SBBR)", "lat": -15.8697, "lng": -47.6182}, "destino": {"nome": "Aeroporto de Goiânia (SBGO)", "lat": -16.6322, "lng": -49.2206}}
+    {"origem": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": SDPW_LAT, "lng": SDPW_LNG}, "destino": {"nome": "Intl Viracopos Campinas (SBKP)", "lat": -23.0074, "lng": -47.1345}},
+    {"origem": {"nome": "Heliponto Faria Lima SP", "lat": -23.5780, "lng": -46.6900}, "destino": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": SDPW_LAT, "lng": SDPW_LNG}},
+    {"origem": {"nome": "Campo de Marte SP (SBMT)", "lat": -23.5069, "lng": -46.6340}, "destino": {"nome": "Aeroporto de Amarais Campinas (SDAM)", "lat": -22.8586, "lng": -47.0700}},
+    {"origem": {"nome": "Heliponto Alphaville Barueri", "lat": -23.4980, "lng": -46.8500}, "destino": {"nome": "Aeroporto de Sorocaba (SDCO)", "lat": -23.4797, "lng": -47.4857}},
+    {"origem": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": SDPW_LAT, "lng": SDPW_LNG}, "destino": {"nome": "Aeroporto de Ribeirão Preto (SBRP)", "lat": -21.1364, "lng": -47.7725}}
 ]
 
 MODELOS_HELICOPTEROS = [
     {"modelo": "Airbus H145 (EC145)", "fabricante": "Airbus Helicopters", "pax_max": 8, "peso_max": 3800},
     {"modelo": "AgustaWestland AW109 GrandNew", "fabricante": "Leonardo Helicopters", "pax_max": 6, "peso_max": 3175},
     {"modelo": "Bell 429 GlobalRanger", "fabricante": "Bell Helicopter", "pax_max": 7, "peso_max": 3175},
-    {"modelo": "Sikorsky S-76C++", "fabricante": "Sikorsky Aircraft", "pax_max": 12, "peso_max": 5306},
-    {"modelo": "Robinson R44 Raven II", "fabricante": "Robinson Helicopter", "pax_max": 3, "peso_max": 1134},
-    {"modelo": "Airbus H125 Esquilo (HB350)", "fabricante": "Helibras / Airbus", "pax_max": 5, "peso_max": 2250},
-    {"modelo": "EC135 T3", "fabricante": "Airbus Helicopters", "pax_max": 6, "peso_max": 2980}
+    {"modelo": "Airbus H125 Esquilo (HB350)", "fabricante": "Helibras / Airbus", "pax_max": 5, "peso_max": 2250}
 ]
 
 TIPOS_OPERACAO = [
@@ -43,8 +38,7 @@ def calcular_bearing(lat1, lon1, lat2, lon2):
     x = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(delta_lambda)
     return int((math.degrees(math.atan2(y, x)) + 360) % 360)
 
-def inicializar_frota()
-:
+def inicializar_frota():
     global frota_simulada
     frota_simulada = []
     prefixos_usados = set()
@@ -66,12 +60,9 @@ def inicializar_frota()
         lat_dest = rota["destino"]["lat"]
         lng_dest = rota["destino"]["lng"]
 
-        t = random.uniform(0.05, 0.95)
-        0 = random.uniform(-0.12, 0.12)
-        0 = random.uniform(-0.12, 0.12)
-
-        lat_init = lat_base + t * (lat_dest - lat_base) + 0
-        lng_init = lng_base + t * (lng_dest - lng_base) + 0
+        t = random.uniform(0.1, 0.9)
+        lat_init = lat_base + t * (lat_dest - lat_base)
+        lng_init = lng_base + t * (lng_dest - lng_base)
 
         heading = calcular_bearing(lat_init, lng_init, lat_dest, lng_dest)
         pax_atual = random.randint(1, mod["pax_max"])
@@ -103,7 +94,6 @@ def inicializar_frota()
 
 inicializar_frota()
 
-
 def atualizar_posicoes():
     for a in frota_simulada:
         rad = math.radians(a["heading"])
@@ -128,21 +118,19 @@ INDEX_HTML = """<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helicóptero Web Valdecir - Telemetria (500 Helicópteros)</title>
+    <title>Helicóptero Web Valdecir - Telemetria Real</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
         body { display: flex; flex-direction: column; height: 100vh; background-color: #0f172a; color: #f8fafc; }
         header { background-color: #1e293b; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #334155; }
-        h1 { font-size: 1.2rem; color: #38bdf8; display: flex; align-items: center; gap: 10px; }
-        .badge-live { background-color: #059669; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        h1 { font-size: 1.2rem; color: #38bdf8; }
         .main-container { display: flex; flex: 1; overflow: hidden; }
-        #map { flex: 1; height: 100%; background-color: #1e293b; }
+        #map { flex: 1; height: 100%; }
         .sidebar { width: 380px; background-color: #0f172a; border-left: 2px solid #334155; display: flex; flex-direction: column; padding: 15px; gap: 15px; overflow-y: auto; }
         .panel { background-color: #1e293b; border-radius: 8px; padding: 15px; border: 1px solid #334155; }
-        .panel-title { font-size: 0.95rem; font-weight: bold; color: #94a3b8; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #334155; padding-bottom: 6px; }
+        .panel-title { font-size: 0.95rem; font-weight: bold; color: #94a3b8; margin-bottom: 12px; border-bottom: 1px solid #334155; padding-bottom: 6px; }
         .plano-voo { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; }
         .plano-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #334155; padding-bottom: 4px; }
         .plano-item span { color: #94a3b8; }
@@ -157,7 +145,6 @@ INDEX_HTML = """<!DOCTYPE html>
 <body>
     <header>
         <h1>🚁 Helicóptero Web Valdecir - Telemetria (500 Helicópteros)</h1>
-        <span class="badge-live">500 Helicópteros Ao Vivo</span>
     </header>
     <div class="main-container">
         <div id="map"></div>
@@ -190,33 +177,12 @@ INDEX_HTML = """<!DOCTYPE html>
         </aside>
     </div>
     <script>
-        const map = L.map('map').setView([-22.7115, -47.6182], 8);
+        const map = L.map('map').setView([-22.710556, -47.619444], 10);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         let marcadores = {};
-        let rotaPolyline = null, marcadorOrigem = null, marcadorDestino = null, selecaoAtualId = null;
-
-        function limparRota() {
-            if (rotaPolyline) { map.removeLayer(rotaPolyline); rotaPolyline = null; }
-            if (marcadorOrigem) { map.removeLayer(marcadorOrigem); marcadorOrigem = null; }
-            if (marcadorDestino) { map.removeLayer(marcadorDestino); marcadorDestino = null; }
-            selecaoAtualId = null;
-        }
-
-        map.on('click', function(e) {
-            limparRota();
-            document.getElementById('plano-titulo').innerText = 'Selecione uma aeronave';
-            document.getElementById('p-operacao').innerText = '-';
-            document.getElementById('p-modelo').innerText = '-';
-            document.getElementById('p-origem').innerText = '-';
-            document.getElementById('p-destino').innerText = '-';
-            document.getElementById('p-pax').innerText = '-';
-            document.getElementById('p-peso').innerText = '-';
-            document.getElementById('p-alt-vel').innerText = '-';
-            document.getElementById('p-combustivel').innerText = '-';
-        });
-
-        let rotaPercorrida = null, rotaRestante = null;
+        let rotaPercorrida = null, rotaRestante = null, marcadorOrigem = null, marcadorDestino = null, selecaoAtualId = null;
+        let popupClique = L.popup();
 
         function limparRota() {
             if (rotaPercorrida) { map.removeLayer(rotaPercorrida); rotaPercorrida = null; }
@@ -226,6 +192,39 @@ INDEX_HTML = """<!DOCTYPE html>
             selecaoAtualId = null;
         }
 
+        map.on('click', async function(e) {
+            limparRota();
+            const lat = e.latlng.lat.toFixed(6);
+            const lng = e.latlng.lng.toFixed(6);
+            
+            popupClique
+                .setLatLng(e.latlng)
+                .setContent('📍 <b>Buscando localização...</b><br><small>Coordenadas: ' + lat + ', ' + lng + '</small>')
+                .openOn(map);
+
+            try {
+                const res = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng);
+                const data = await res.json();
+                const cidade = data.address.city || data.address.town || data.address.village || data.address.municipality || 'Localidade não mapeada';
+                const bairro = data.address.suburb || data.address.neighbourhood || data.address.road || '';
+                const localFormatado = bairro ? bairro + ', ' + cidade : cidade;
+
+                popupClique.setContent(
+                    '<div style="font-size: 13px; color: #0f172a;">' +
+                    '<b style="color:#0284c7;">📍 ' + localFormatado + '</b><br>' +
+                    '<b>Lat:</b> ' + lat + ' | <b>Lng:</b> ' + lng +
+                    '</div>'
+                );
+            } catch (err) {
+                popupClique.setContent(
+                    '<div style="font-size: 13px; color: #0f172a;">' +
+                    '<b style="color:#0284c7;">📍 Coordenadas Mapeadas</b><br>' +
+                    '<b>Lat:</b> ' + lat + ' | <b>Lng:</b> ' + lng +
+                    '</div>'
+                );
+            }
+        });
+
         function desenharRota(aero) {
             limparRota();
             selecaoAtualId = aero.id;
@@ -233,14 +232,11 @@ INDEX_HTML = """<!DOCTYPE html>
                 const trechoPercorrido = [[aero.origem.lat, aero.origem.lng], [aero.latitude, aero.longitude]];
                 const trechoRestante = [[aero.latitude, aero.longitude], [aero.destino.lat, aero.destino.lng]];
 
-                // Trecho percorrido: Verde
                 rotaPercorrida = L.polyline(trechoPercorrido, { color: '#10b981', weight: 4 }).addTo(map);
-
-                // Trecho restante: Vermelho tracejado
                 rotaRestante = L.polyline(trechoRestante, { color: '#ef4444', weight: 3, dashArray: '6, 6' }).addTo(map);
 
-                marcadorOrigem = L.circleMarker([aero.origem.lat, aero.origem.lng], { radius: 6, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.9 }).addTo(map).bindPopup(`🛫 <b>Origem:</b> ${aero.origem.nome}`);
-                marcadorDestino = L.marker([aero.destino.lat, aero.destino.lng]).addTo(map).bindPopup(`🛬 <b>Destino:</b> ${aero.destino.nome}`);
+                marcadorOrigem = L.circleMarker([aero.origem.lat, aero.origem.lng], { radius: 6, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.9 }).addTo(map).bindPopup('🛫 <b>Origem:</b> ' + aero.origem.nome);
+                marcadorDestino = L.marker([aero.destino.lat, aero.destino.lng]).addTo(map).bindPopup('🛬 <b>Destino:</b> ' + aero.destino.nome);
             }
         }
 
@@ -248,26 +244,26 @@ INDEX_HTML = """<!DOCTYPE html>
             const aero = aeronaves.find(a => a.id === id);
             if (!aero) return;
             const speedKmh = Math.round(aero.velocidade * 1.852);
-            document.getElementById('plano-titulo').innerText = `🚁 ${aero.prefixo} [ICAO: ${aero.icao}]`;
+            document.getElementById('plano-titulo').innerText = '🚁 ' + aero.prefixo + ' [ICAO: ' + aero.icao + ']';
             document.getElementById('p-operacao').innerText = aero.tipo_operacao;
-            document.getElementById('p-modelo').innerText = `${aero.modelo} (${aero.fabricante})`;
+            document.getElementById('p-modelo').innerText = aero.modelo + ' (' + aero.fabricante + ')';
             document.getElementById('p-origem').innerText = aero.origem.nome;
             document.getElementById('p-destino').innerText = aero.destino.nome;
-            document.getElementById('p-pax').innerText = `${aero.pax_atual} A Bordo / ${aero.pax_max} Max`;
-            document.getElementById('p-peso').innerText = `${aero.peso_atual} kg / ${aero.peso_max} kg (MTOW)`;
-            document.getElementById('p-alt-vel').innerText = `${aero.altitude} ft | ${speedKmh} km/h (${aero.velocidade} kts)`;
-            document.getElementById('p-combustivel').innerText = `${aero.combustivel}% (${aero.autonomia})`;
+            document.getElementById('p-pax').innerText = aero.pax_atual + ' A Bordo / ' + aero.pax_max + ' Max';
+            document.getElementById('p-peso').innerText = aero.peso_atual + ' kg / ' + aero.peso_max + ' kg (MTOW)';
+            document.getElementById('p-alt-vel').innerText = aero.altitude + ' ft | ' + speedKmh + ' km/h (' + aero.velocidade + ' kts)';
+            document.getElementById('p-combustivel').innerText = aero.combustivel + '% (' + aero.autonomia + ')';
             desenharRota(aero);
         }
 
         function criarIconeHelicoptero(prefixo, corHex, heading) {
-            const svgIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" style="transform: rotate(${heading}deg);">
-                <line x1="2" y1="12" x2="22" y2="12" stroke="${corHex}" stroke-width="2.5" stroke-linecap="round"/>
-                <path fill="${corHex}" stroke="#ffffff" stroke-width="1.2" d="M12,4 C10,4 9,6 9,10 L9,14 C9,16 10,17 11,18 L11,21 L13,21 L13,18 C14,17 15,16 15,14 L15,10 C15,6 14,4 12,4 Z"/>
-                <line x1="10" y1="21" x2="14" y2="21" stroke="${corHex}" stroke-width="2"/>
-            </svg>`;
+            const svgIcon = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" style="transform: rotate(' + heading + 'deg);">' +
+                '<line x1="2" y1="12" x2="22" y2="12" stroke="' + corHex + '" stroke-width="2.5" stroke-linecap="round"/>' +
+                '<path fill="' + corHex + '" stroke="#ffffff" stroke-width="1.2" d="M12,4 C10,4 9,6 9,10 L9,14 C9,16 10,17 11,18 L11,21 L13,21 L13,18 C14,17 15,16 15,14 L15,10 C15,6 14,4 12,4 Z"/>' +
+                '<line x1="10" y1="21" x2="14" y2="21" stroke="' + corHex + '" stroke-width="2"/>' +
+            '</svg>';
             return L.divIcon({
-                html: `<div style="text-align:center;">${svgIcon}<div style="background-color:rgba(15,23,42,0.85); color:${corHex}; font-size:9px; font-weight:bold; border-radius:3px; padding:1px 3px; margin-top:-4px; white-space:nowrap; border:1px solid ${corHex};">${prefixo}</div></div>`,
+                html: '<div style="text-align:center;">' + svgIcon + '<div style="background-color:rgba(15,23,42,0.85); color:' + corHex + '; font-size:9px; font-weight:bold; border-radius:3px; padding:1px 3px; margin-top:-4px; white-space:nowrap; border:1px solid ' + corHex + ';">' + prefixo + '</div></div>',
                 className: '', iconSize: [40, 40], iconAnchor: [20, 20]
             });
         }
@@ -287,17 +283,15 @@ INDEX_HTML = """<!DOCTYPE html>
                         map.setView([aero.latitude, aero.longitude], 10);
                         selecionarAeronave(aero.id, aeronaves);
                     };
-                    tr.innerHTML = `<td style="font-weight:bold; color:${aero.cor_operacao};">${aero.prefixo}</td><td>${aero.tipo_operacao}</td><td>${aero.pax_atual}/${aero.pax_max} pax</td><td>${aero.altitude}ft / ${speedKmh}km/h</td>`;
+                    tr.innerHTML = '<td style="font-weight:bold; color:' + aero.cor_operacao + ';">' + aero.prefixo + '</td><td>' + aero.tipo_operacao + '</td><td>' + aero.pax_atual + '/' + aero.pax_max + ' pax</td><td>' + aero.altitude + 'ft / ' + speedKmh + 'km/h</td>';
                     tbody.appendChild(tr);
 
                     const iconCustom = criarIconeHelicoptero(aero.prefixo, aero.cor_operacao, aero.heading);
-                    const popupContent = `<div style="font-size:12px;"><b>🚁 ${aero.prefixo} (${aero.modelo})</b><br><b>Operação:</b> ${aero.tipo_operacao}<br><b>Passageiros:</b> ${aero.pax_atual} de ${aero.pax_max} pax<br><b>Massa:</b> ${aero.peso_atual} kg<br><b>Altitude:</b> ${aero.altitude} ft | <b>Velocidade:</b> ${speedKmh} km/h (${aero.velocidade} kts)</div>`;
-
                     if (marcadores[aero.id]) {
                         marcadores[aero.id].setLatLng([aero.latitude, aero.longitude]);
                         marcadores[aero.id].setIcon(iconCustom);
                     } else {
-                        const m = L.marker([aero.latitude, aero.longitude], { icon: iconCustom }).addTo(map).bindPopup(popupContent);
+                        const m = L.marker([aero.latitude, aero.longitude], { icon: iconCustom }).addTo(map);
                         m.on('click', (e) => { L.DomEvent.stopPropagation(e); selecionarAeronave(aero.id, aeronaves); });
                         marcadores[aero.id] = m;
                     }
@@ -307,7 +301,7 @@ INDEX_HTML = """<!DOCTYPE html>
                     const aeroSel = aeronaves.find(a => a.id === selecaoAtualId);
                     if (aeroSel) desenharRota(aeroSel);
                 }
-            } catch (err) { console.error(err); }
+            } catch (err) {}
         }
 
         carregarTelemetria();
