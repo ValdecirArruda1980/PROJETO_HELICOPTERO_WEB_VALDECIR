@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><title>Radar ADS-B Valdecir - Voos Reais</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+1style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:sans-serif;}
+body{display:flex;flex-direction:column;height:100vh;background:#0f172a;color:#fff;}
+header{background:#1e293b;padding:12px;display:flex;justify-content:space-between;border-bottom:2px solid #334155;}
+.main{display:flex;flex:1;overflow:hidden;}
+#map{flex:1;height:100%;}
+.sidebar{width:350px;padding:15px;background:#0f172a;display:flex;flex-direction:column;gap:15px;overflow-y:auto;}
+.panel{background:#1e293b;padding:12px;border-radius:6px;border:1px solid #334155;}
+table{width:100%;font-size:0.8rem;text-align:left;border-collapse:collapse;}
+th,td{padding:6px;border-bottom:1px solid #334155;}
+tr:hover{background:#334155;cursor:pointer;}
+</style>
+</head>
+<body>
+<header><h2>ÖX Radar ADS-B Valdecir - Voos Reais ao Vivo (OpenSky)</h2></header>
+<div class="main">
+<div id="map"></div>
+<aside class="sidebar">
+<div class="panel">
+<h3 style="color:#38bdf8;margin-bottom:8px;">Ä9 Voo Selecionado</h3>
+<p>CallSign: <strong id="p-call">-</strong></p>
+<p>País: <strong id="p-pais">-</strong></p>
+<p>Altitude: <strong id="p-alt">-</strong></p>
+<p>Velocidade: <strong id="p-vel">-</strong></p>
+</div>
+<div class="panel" style="flex:1;overflow-y:auto;">
+<h3 style="color:#38bdf8;margin-bottom:8px;">Ä9 Tráfego Real em Tempo Real</h3>
+<table><thead><tr><th>CallSign</th><th>Alt/Vel</th></tr></thead><tbody id="tabela"></tbody></table>
+</div>
+</aside>
+</div>
+<script>
+const map = L.map('map').setView([-22.7610, -47.6530], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+let marcadores = {};
+async function atualizar() {
+try {
+const res = await fetch('/api/telemetria');
+const dados = await res.json();
+const tb = document.getElementById('tabela');
+tb.innerHTML = '';
+dados.forEach(a => {
+const kmh = Math.round(a.velocidade * 1.852);
+const tr = document.createElement('tr');
+tr.onclick = () => {
+map.setView([a.latitude, a.longitude], 10);
+document.getElementById('p-call').innerText = a.prefixo;
+document.getElementById('p-pais').innerText = a.fabricante;
+document.getElementById('p-alt').innerText = a.altitude + ' ft';
+document.getElementById('p-vel').innerText = kmh + ' km/h (' + a.velocidade + ' kts)';
+};
+tr.innerHTML = '<td><b style="color:#38bdf8;">' + a.prefixo + '</b></td><td>' + a.altitude + 'ft / ' + kmh + 'km/h</td>';
+tb.appendChild(tr);
+const iconHtml = '<div style="transform:rotate(' + a.heading + 'deg);color:#38bdf8;font-size:22px;">ÖX</div>';
+const icon = L.divIcon({ html: iconHtml, className: '' });
+if (marcadores[a.icao]) {
+marcadores_a.ica0].setLatLng([a.latitude, a.longitude]);
+} else {
+marcadores_a.ica0] = L.marker([a.latitude, a.longitude], { icon: icon }).addTo(map);
+}
+});
+} catch(e){}
+}
+atualizar(); setInterval(atualizar, 10000);
+</script>
+</body>
+</html>
