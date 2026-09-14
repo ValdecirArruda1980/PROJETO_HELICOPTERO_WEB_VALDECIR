@@ -1,4 +1,6 @@
-import math
+import urllib.request
+
+codigo_app = '''import math
 import random
 from flask import Flask, render_template_string, jsonify
 
@@ -45,6 +47,7 @@ def inicializar_frota():
     frota_simulada = []
     prefixos_usados = set()
 
+    # 5000 Aeronaves com dispersão geográfica para espalhar pelo espaço aéreo
     for i in range(1, 5001):
         while True:
             p = f"PP-{''.join(random.choices('ABCDEFGHIJKLMNOPQRSTUVWXYZ', k=2))}{random.randint(10, 99)}"
@@ -57,6 +60,7 @@ def inicializar_frota():
         mod = random.choice(MODELOS_HELICOPTEROS)
         op = random.choice(TIPOS_OPERACAO)
 
+        # Adiciona dispersão aleatória ampla para espalhar os helicópteros organicamente
         lat_base = rota["origem"]["lat"] + random.uniform(-0.25, 0.25)
         lng_base = rota["origem"]["lng"] + random.uniform(-0.25, 0.25)
         lat_dest = rota["destino"]["lat"] + random.uniform(-0.25, 0.25)
@@ -318,3 +322,9 @@ def index():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+'''
+
+with open('app.py', 'w', encoding='utf-8') as f:
+    f.write(codigo_app)
+
+print('✅ app.py atualizado para 5.000 helicópteros com dispersão geográfica!')
