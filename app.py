@@ -6,15 +6,15 @@ from flask import Flask, render_template_string, jsonify
 app = Flask(__name__)
 
 BASES_E_ROTAS = [
-    {"origem": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": -22.7115, "lng": -47.6182}, "destino": {"nome": "Intl Viracopos Campinas (SBKP)", "lat": -23.0074, "lng": -47.1345}},
+    {"origem": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": -22.710556, "lng": -47.619444}, "destino": {"nome": "Intl Viracopos Campinas (SBKP)", "lat": -23.0074, "lng": -47.619444}},
     {"origem": {"nome": "Heliponto Faria Lima SP", "lat": -23.5780, "lng": -46.6900}, "destino": {"nome": "Aeroporto de Jundiaí (SDJD)", "lat": -23.1817, "lng": -46.9422}},
-    {"origem": {"nome": "Campo de Marte SP (SBMT)", "lat": -23.5069, "lng": -46.6340}, "destino": {"nome": "Aeroporto de Amarais Campinas (SDAM)", "lat": -22.8586, "lng": -47.0700}},
-    {"origem": {"nome": "Heliponto Alphaville Barueri", "lat": -23.4980, "lng": -46.8500}, "destino": {"nome": "Aeroporto de Sorocaba (SDCO)", "lat": -23.4797, "lng": -47.4857}},
-    {"origem": {"nome": "Aeroporto de Bauru (SBBX)", "lat": -22.3444, "lng": -49.0538}, "destino": {"nome": "Aeroporto de Ribeirão Preto (SBRP)", "lat": -21.1364, "lng": -47.7725}},
+    {"origem": {"nome": "Campo de Marte SP (SBMT)", "lat": -23.5069, "lng": -46.6340}, "destino": {"nome": "Aeroporto de Amarais Campinas (SDAM)", "lat": -22.710556, "lng": -47.619444}},
+    {"origem": {"nome": "Heliponto Alphaville Barueri", "lat": -23.4980, "lng": -46.8500}, "destino": {"nome": "Aeroporto de Sorocaba (SDCO)", "lat": -23.4797, "lng": -47.619444}},
+    {"origem": {"nome": "Aeroporto de Bauru (SBBX)", "lat": -22.710556, "lng": -49.0538}, "destino": {"nome": "Aeroporto de Ribeirão Preto (SBRP)", "lat": -21.1364, "lng": -47.619444}},
     {"origem": {"nome": "Heliponto Rebouças SP", "lat": -23.5650, "lng": -46.6750}, "destino": {"nome": "Aeroporto de Santos (SBST)", "lat": -23.9275, "lng": -46.2842}},
-    {"origem": {"nome": "Plataforma Offshore Bacia de Santos", "lat": -25.2000, "lng": -45.1000}, "destino": {"nome": "Aerop. Jacarepaguá RJ (SBJR)", "lat": -22.9869, "lng": -43.3703}},
+    {"origem": {"nome": "Plataforma Offshore Bacia de Santos", "lat": -25.2000, "lng": -45.1000}, "destino": {"nome": "Aerop. Jacarepaguá RJ (SBJR)", "lat": -22.710556, "lng": -43.3703}},
     {"origem": {"nome": "Aerop. Bacacheri Curitiba (SBBI)", "lat": -25.4050, "lng": -49.2320}, "destino": {"nome": "Aerop. Hercílio Luz FNC (SBFL)", "lat": -27.6703, "lng": -48.5525}},
-    {"origem": {"nome": "Aeroporto de Brasília (SBBR)", "lat": -15.8697, "lng": -47.9172}, "destino": {"nome": "Aeroporto de Goiânia (SBGO)", "lat": -16.6322, "lng": -49.2206}}
+    {"origem": {"nome": "Aeroporto de Brasília (SBBR)", "lat": -15.8697, "lng": -47.619444}, "destino": {"nome": "Aeroporto de Goiânia (SBGO)", "lat": -16.6322, "lng": -49.2206}}
 ]
 
 MODELOS_HELICOPTEROS = [
