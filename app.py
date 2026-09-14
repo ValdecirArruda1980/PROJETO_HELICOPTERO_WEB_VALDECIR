@@ -6,7 +6,7 @@ from flask import Flask, render_template_string, jsonify
 app = Flask(__name__)
 
 BASES_E_ROTAS = [
-    {"origem": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": -22.7106, "lng": -47.6194}, "destino": {"nome": "Intl Viracopos Campinas (SBKP)", "lat": -23.0074, "lng": -47.1345}},
+    {"origem": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": -22.7142, "lng": -47.6156}, "destino": {"nome": "Intl Viracopos Campinas (SBKP)", "lat": -23.0074, "lng": -47.1345}},
     {"origem": {"nome": "Heliponto Faria Lima SP", "lat": -23.5780, "lng": -46.6900}, "destino": {"nome": "Aeroporto de Jundiaí (SDJD)", "lat": -23.1817, "lng": -46.9422}},
     {"origem": {"nome": "Campo de Marte SP (SBMT)", "lat": -23.5069, "lng": -46.6340}, "destino": {"nome": "Aeroporto de Amarais Campinas (SDAM)", "lat": -22.8586, "lng": -47.0700}},
     {"origem": {"nome": "Heliponto Alphaville Barueri", "lat": -23.4980, "lng": -46.8500}, "destino": {"nome": "Aeroporto de Sorocaba (SDCO)", "lat": -23.4797, "lng": -47.4857}},
@@ -188,7 +188,7 @@ INDEX_HTML = """<!DOCTYPE html>
         </aside>
     </div>
     <script>
-        const map = L.map('map').setView([-22.7106, -47.6194], 8);
+        const map = L.map('map').setView([-22.7142, -47.6156], 8);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         let marcadores = {};
