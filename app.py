@@ -214,13 +214,30 @@ INDEX_HTML = """<!DOCTYPE html>
             document.getElementById('p-combustivel').innerText = '-';
         });
 
+        let rotaPercorrida = null, rotaRestante = null;
+
+        function limparRota() {
+            if (rotaPercorrida) { map.removeLayer(rotaPercorrida); rotaPercorrida = null; }
+            if (rotaRestante) { map.removeLayer(rotaRestante); rotaRestante = null; }
+            if (marcadorOrigem) { map.removeLayer(marcadorOrigem); marcadorOrigem = null; }
+            if (marcadorDestino) { map.removeLayer(marcadorDestino); marcadorDestino = null; }
+            selecaoAtualId = null;
+        }
+
         function desenharRota(aero) {
             limparRota();
             selecaoAtualId = aero.id;
             if (aero.origem && aero.destino) {
-                const pontos = [[aero.origem.lat, aero.origem.lng], [aero.latitude, aero.longitude], [aero.destino.lat, aero.destino.lng]];
-                rotaPolyline = L.polyline(pontos, { color: aero.cor_operacao, weight: 3, dashArray: '6, 6' }).addTo(map);
-                marcadorOrigem = L.circleMarker([aero.origem.lat, aero.origem.lng], { radius: 6, color: '#38bdf8', fillColor: '#38bdf8', fillOpacity: 0.8 }).addTo(map).bindPopup(`🛫 <b>Origem:</b> ${aero.origem.nome}`);
+                const trechoPercorrido = [[aero.origem.lat, aero.origem.lng], [aero.latitude, aero.longitude]];
+                const trechoRestante = [[aero.latitude, aero.longitude], [aero.destino.lat, aero.destino.lng]];
+
+                // Trecho percorrido: Verde
+                rotaPercorrida = L.polyline(trechoPercorrido, { color: '#10b981', weight: 4 }).addTo(map);
+
+                // Trecho restante: Vermelho tracejado
+                rotaRestante = L.polyline(trechoRestante, { color: '#ef4444', weight: 3, dashArray: '6, 6' }).addTo(map);
+
+                marcadorOrigem = L.circleMarker([aero.origem.lat, aero.origem.lng], { radius: 6, color: '#10b981', fillColor: '#10b981', fillOpacity: 0.9 }).addTo(map).bindPopup(`🛫 <b>Origem:</b> ${aero.origem.nome}`);
                 marcadorDestino = L.marker([aero.destino.lat, aero.destino.lng]).addTo(map).bindPopup(`🛬 <b>Destino:</b> ${aero.destino.nome}`);
             }
         }
