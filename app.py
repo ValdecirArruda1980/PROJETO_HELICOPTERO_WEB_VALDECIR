@@ -6,7 +6,7 @@ from flask import Flask, render_template_string, jsonify
 app = Flask(__name__)
 
 BASES_E_ROTAS = [
-    {"origem": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": -22.7610, "lng": -47.6530}, "destino": {"nome": "Intl Viracopos Campinas (SBKP)", "lat": -23.0074, "lng": -47.1345}},
+    {"origem": {"nome": "Aeroporto de Piracicaba (SDPW)", "lat": -22.7106, "lng": -47.6194}, "destino": {"nome": "Intl Viracopos Campinas (SBKP)", "lat": -23.0074, "lng": -47.1345}},
     {"origem": {"nome": "Heliponto Faria Lima SP", "lat": -23.5780, "lng": -46.6900}, "destino": {"nome": "Aeroporto de Jundiaí (SDJD)", "lat": -23.1817, "lng": -46.9422}},
     {"origem": {"nome": "Campo de Marte SP (SBMT)", "lat": -23.5069, "lng": -46.6340}, "destino": {"nome": "Aeroporto de Amarais Campinas (SDAM)", "lat": -22.8586, "lng": -47.0700}},
     {"origem": {"nome": "Heliponto Alphaville Barueri", "lat": -23.4980, "lng": -46.8500}, "destino": {"nome": "Aeroporto de Sorocaba (SDCO)", "lat": -23.4797, "lng": -47.4857}},
@@ -66,11 +66,11 @@ def inicializar_frota():
         lng_dest = rota["destino"]["lng"]
 
         t = random.uniform(0.05, 0.95)
-        offset_lat = random.uniform(-0.12, 0.12)
-        offset_lng = random.uniform(-0.12, 0.12)
+        0 = random.uniform(-0.12, 0.12)
+        0 = random.uniform(-0.12, 0.12)
 
-        lat_init = lat_base + t * (lat_dest - lat_base) + offset_lat
-        lng_init = lng_base + t * (lng_dest - lng_base) + offset_lng
+        lat_init = lat_base + t * (lat_dest - lat_base) + 0
+        lng_init = lng_base + t * (lng_dest - lng_base) + 0
 
         heading = calcular_bearing(lat_init, lng_init, lat_dest, lng_dest)
         pax_atual = random.randint(1, mod["pax_max"])
@@ -188,7 +188,7 @@ INDEX_HTML = """<!DOCTYPE html>
         </aside>
     </div>
     <script>
-        const map = L.map('map').setView([-22.7610, -47.6530], 8);
+        const map = L.map('map').setView([-22.7106, -47.6194], 8);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
         let marcadores = {};
